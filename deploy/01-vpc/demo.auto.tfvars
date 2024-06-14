@@ -1,7 +1,7 @@
-name         = "eks-localzone-blog"
-vpc_cidr     = "10.0.0.0/16"
-cluster_name = "lindarr-demo"
+name         = "eks-localzone-dip"
+vpc_cidr     = "10.10.0.0/16"
+cluster_name = "loxilb-demo-3"
 
-region = "us-east-1"
+region = "us-west-2"
 
-lzs = ["us-east-1-bos-1a"]
+lzs = ["us-west-2-lax-1a"]

@@ -1,5 +1,5 @@
 provider "aws" {
-  region = "us-east-1"
+  region = "us-west-2"
 
 }
 
@@ -19,7 +19,7 @@ provider "helm" {
 
 locals {
   name   = basename(path.cwd)
-  region = "us-east-1"
+  region = "us-west-2"
   domain_for_route53 = var.domain_name_in_route53
 }
 
@@ -38,7 +38,7 @@ provider "kubernetes" {
 
 
 module "eks_blueprints" {
-  source = "github.com/aws-ia/terraform-aws-eks-blueprints"
+  source = "github.com/aws-ia/terraform-aws-eks-blueprints?ref=v4.32.1"
 
   #   tenant      = local.tenant
   #   environment = local.environment
@@ -51,14 +51,16 @@ module "eks_blueprints" {
   private_subnet_ids = var.private_subnets
 
   # EKS CONTROL PLANE VARIABLES
-  cluster_version = "1.22"
+  cluster_version = "1.24"
 
   # EKS Managed Nodes in AZ
   managed_node_groups = {
     mg_5 = {
       node_group_name = "managed-ondemand"
-      instance_types  = ["m5.large"]
+      instance_types  = ["t3.medium"]
       min_size        = 1
+      max_size        = 1
+      desired_size    = 1
       subnet_ids      = var.private_subnets
     }
   }
@@ -67,7 +69,7 @@ module "eks_blueprints" {
   self_managed_node_groups = {
     self_mg_4 = {
       node_group_name    = "self-managed-ondemand"
-      instance_type      = "t3.xlarge"
+      instance_type      = "t3.medium"
       capacity_type      = ""                # Optional Use this only for SPOT capacity as capacity_type = "spot"
       launch_template_os = "amazonlinux2eks" # amazonlinux2eks  or bottlerocket or windows
       # launch_template_os = "bottlerocket" # amazonlinux2eks  or bottlerocket or windows
@@ -75,14 +77,14 @@ module "eks_blueprints" {
         {
           device_name = "/dev/xvda"
           volume_type = "gp2"
-          volume_size = "100"
+          volume_size = "20"
         },
       ]
       enable_monitoring = false
       # AUTOSCALING
-      max_size = "3"
+      max_size = "2"
       # EFS CSI Drvier required two nodes so that installing helm chart will not stuck 
-      min_size = "1"
+      min_size = "2"
 
       subnet_ids = [var.private_subnets_local_zone]
     },
@@ -143,7 +145,7 @@ module "eks_blueprints" {
 
 
 module "eks_blueprints_kubernetes_addons" {
-  source = "github.com/aws-ia/terraform-aws-eks-blueprints//modules/kubernetes-addons"
+  source = "github.com/aws-ia/terraform-aws-eks-blueprints?ref=v4.32.1//modules/kubernetes-addons"
 
   eks_cluster_id               = module.eks_blueprints.eks_cluster_id
   eks_worker_security_group_id = module.eks_blueprints.worker_node_security_group_id
@@ -157,8 +159,8 @@ module "eks_blueprints_kubernetes_addons" {
   # enable_amazon_eks_vpc_cni            = true
   # enable_amazon_eks_coredns            = true
   # enable_amazon_eks_kube_proxy         = true
-  enable_amazon_eks_aws_ebs_csi_driver = true
-  enable_aws_load_balancer_controller = true  
+  #enable_amazon_eks_aws_ebs_csi_driver = true
+  #enable_aws_load_balancer_controller = false 
 
   enable_metrics_server               = true
 
